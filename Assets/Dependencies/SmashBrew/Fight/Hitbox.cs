@@ -4,7 +4,6 @@ using UnityEngine;
 namespace Hourai.SmashBrew {
 
     [DisallowMultipleComponent]
-    [RequireComponent(typeof (Collider))]
     public sealed class Hitbox : MonoBehaviour {
 
         public enum Type {
@@ -72,7 +71,7 @@ namespace Hourai.SmashBrew {
         void OnTriggerEnter(Collider other) {
             if (!other.CompareTag(Tags.Hitbox))
                 return;
-            Hitbox otherHitbox = other.GetComponent<Hitbox>();
+            var otherHitbox = other.GetComponent<Hitbox>();
             if (otherHitbox == null)
                 return;
             
