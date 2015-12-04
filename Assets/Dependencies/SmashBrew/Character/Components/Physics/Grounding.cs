@@ -1,36 +1,38 @@
 ﻿using UnityEngine;
 using System;
 using System.Collections.Generic;
+using Hourai.Events;
 
 namespace Hourai.SmashBrew {
+
+    public class GroundEvent : IEvent {
+
+        public bool grounded;
+
+    }
 
     [RequiredCharacterComponent]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CapsuleCollider), typeof(Animator))]
-    public class Grounding : MonoBehaviour {
+    public class Grounding : CharacterComponent {
         
         private CapsuleCollider _movementCollider;
-        private Animator _animator;
 
         private HashSet<Collider> ground;
 
-        public event Action OnGrounded;
-
         public bool IsGrounded {
-            get { return _animator.GetBool(CharacterAnimVars.Grounded); }
+            get { return Animator.GetBool(CharacterAnimVars.Grounded); }
             private set {
                 if (IsGrounded == value)
                     return;
-                _animator.SetBool(CharacterAnimVars.Grounded, value);
-                if (OnGrounded != null)
-                    OnGrounded();
+                Animator.SetBool(CharacterAnimVars.Grounded, value);
+                CharacterEvents.Publish(new GroundEvent { grounded = value });
             }
         }
 
         void Awake() {
             ground = new HashSet<Collider>();
             _movementCollider = GetComponent<CapsuleCollider>();
-            _animator = GetComponent<Animator>();
         }
 
         void OnCollisionEnter(Collision col) {

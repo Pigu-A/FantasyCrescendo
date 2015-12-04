@@ -1,23 +1,24 @@
-﻿using UnityEngine;
-using UnityEngine.Networking;
-using System;
+﻿using Hourai.Events;
+using UnityEngine;
 
 namespace Hourai.SmashBrew
 {
+    public class JumpEvent : IEvent {
+
+        public bool ground;
+        public int remainingJumps;
+
+    }
+
     [DisallowMultipleComponent]
     [RequiredCharacterComponent]
-    [RequireComponent(typeof(Rigidbody), typeof(Grounding))]
+    [RequireComponent(typeof(Rigidbody))]
     public sealed class Jumping : RestrictableCharacterComponent
     {
         [SerializeField]
         private float[] _jumpPower = { 1.5f, 1.5f };
         
-        [SerializeField]
-        private GameObject airJumpFX;
-
-        public event Action OnJump;
-
-        private Grounding _ground;
+        private bool _grounded;
 
         public int JumpCount { get; private set; }
 
@@ -26,20 +27,19 @@ namespace Hourai.SmashBrew
             get { return _jumpPower == null ? 0 : _jumpPower.Length; }
         }
 
-        protected override void Awake() {
-            base.Awake();
-            _ground = GetComponent<Grounding>();
-            _ground.OnGrounded += OnGrounded;
+        protected override void Start() {
+            base.Start();
+            CharacterEvents.Subscribe<GroundEvent>(OnGrounded);
         }
 
         void OnDestroy()
         {
-            _ground.OnGrounded -= OnGrounded;
+            CharacterEvents.Unsubscribe<GroundEvent>(OnGrounded);
         }
 
-        void OnGrounded()
-        {
-            if(_ground.IsGrounded)
+        void OnGrounded(GroundEvent eventArgs) {
+            _grounded = eventArgs.grounded;
+            if(_grounded)
                 JumpCount = 0;
         }
 
@@ -53,13 +53,7 @@ namespace Hourai.SmashBrew
 
             JumpCount++;
 
-            // Trigger animation
-
-            if (!_ground.IsGrounded && airJumpFX)
-                Instantiate(airJumpFX, transform.position, Quaternion.Euler(90f, 0f, 0f));
-
-            if (OnJump != null)
-                OnJump();
+            CharacterEvents.Publish(new JumpEvent { ground = _grounded, remainingJumps = MaxJumpCount - JumpCount });
         }
     }
 
